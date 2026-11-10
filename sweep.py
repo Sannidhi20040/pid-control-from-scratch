@@ -22,3 +22,12 @@ for name, gains in [("P", (300, 0, 0)), ("PI", (300, 400, 0)), ("PD", (300, 0, 3
     t, x, u = simulate(pid=PID(*gains), T=6.0)
     rise, os_, settle, sse= metrics(t,x)
     print(f"{name:4s} | {rise:.3f} s | {os_:5.1f} % | {settle:.3f} s | {sse:.4f} m")
+
+print()
+print("30 N limit | rise | overshoot | settle | max I part")
+for aw in [False, True]:
+    pid = PID(300, 400, 30, u_min=-30, u_max=30, anti_windup=aw)
+    t, x, u = simulate(pid=pid, T=6.0)
+    rise, os_, settle, sse = metrics(t, x)
+    I_max = np.array(pid.history)[:, 1].max()
+    print(f"anti-windup {str(aw):5s} | {rise:.3f} s | {os_:5.1f} % | {settle:.2f} s | {I_max:.1f} N")

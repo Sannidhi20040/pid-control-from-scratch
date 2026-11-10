@@ -150,6 +150,32 @@ def fig07_parts():
     plt.close()
     print(f"saved fig07 | at t = 3 s: P = {P[-1]:.2f}, I = {I[-1]:.2f}, D = {D[-1]:.2f} N")
 
+def fig08_windup():
+    fig, axs = plt.subplots(1, 3, figsize=(13, 3.8))     # 1 row, 3 graphs side by side
+    for aw, color, name in [(False, "tab:red", "no anti-windup"),
+                            (True, "tab:green", "with anti-windup (clamping)")]:
+        pid = PID(300, 400, 30, u_min=-30, u_max=30, anti_windup=aw)
+        t, x, u = simulate(pid=pid, T=4.0)
+        I = np.array(pid.history)[:, 1]
+        axs[0].plot(t, x, color=color, label=name)
+        axs[1].plot(t, u, color=color, label=name)
+        axs[2].plot(t, I, color=color, label=f"{name} (max {I.max():.0f} N)")
+
+    axs[0].axhline(1.0, linestyle="--", color="k", label="target 1 m")
+    axs[0].set(title="Position", xlabel="time (s)", ylabel="position (m)")
+    axs[1].axhline(30, linestyle=":", color="k", label="motor limit ±30 N")
+    axs[1].axhline(-30, linestyle=":", color="k")
+    axs[1].set(title="Force sent to motor", xlabel="time (s)", ylabel="force (N)")
+    axs[2].axhline(20, linestyle=":", color="gray", label="20 N needed at 1 m")
+    axs[2].set(title="I part (the stored-up push)", xlabel="time (s)", ylabel="force (N)")
+    for ax in axs:
+        ax.legend(fontsize=7)
+        ax.grid(True)
+    fig.suptitle("Integral windup: motor limited to 30 N, gains (300, 400, 30)")
+    fig.tight_layout()
+    fig.savefig("figures/fig08_windup.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print("saved fig08")
 
 if __name__ == "__main__":
     fig01_open_loop()
@@ -159,3 +185,4 @@ if __name__ == "__main__":
     fig05_pd()
     fig06_compare()
     fig07_parts()
+    fig08_windup()
