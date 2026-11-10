@@ -1,0 +1,1 @@
+fig01: A constant 20 N push reaches 1 m only when the spring is exactly 20 N/m; with 16 or 25 N/m it stops at 1.25 or 0.80 m and nothing corrects it.
