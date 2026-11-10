@@ -2,15 +2,17 @@ import numpy as np
 
 
 class PID:
-    def __init__(self, kp, ki, kd, u_min=-np.inf, u_max=np.inf, anti_windup=False):
+    def __init__(self, kp, ki, kd, u_min=-np.inf, u_max=np.inf, anti_windup=False, tau_d=0.0):
         self.kp = kp
         self.ki = ki
         self.kd = kd
-        self.u_min = u_min                  # NEW: motor limits (N); ±infinity = no limit
+        self.u_min = u_min
         self.u_max = u_max
-        self.anti_windup = anti_windup      # NEW: True = use clamping
+        self.anti_windup = anti_windup
+        self.tau_d = tau_d                  # NEW: D filter time constant (s); 0 = no filter
         self.integral = 0.0
         self.e_prev = None
+        self.d_filt = 0.0                   # NEW: the smoothed derivative
         self.history = []
 
     def update(self, r, y, dt):
@@ -19,13 +21,14 @@ class PID:
             deriv = 0.0
         else:
             deriv = (e - self.e_prev) / dt
+        alpha = dt / (self.tau_d + dt)                      # NEW: 1.0 when tau_d = 0 (no smoothing)
+        self.d_filt = self.d_filt + alpha * (deriv - self.d_filt)   # NEW: move part-way to the raw value
         P = self.kp * e
-        D = self.kd * deriv
-        I_try = self.ki * (self.integral + e * dt)        # NEW: the I part IF we integrate this step
-        u_unsat = P + I_try + D                           # what the controller WANTS
-        u = min(max(u_unsat, self.u_min), self.u_max)     # NEW: what the motor can GIVE (clip)
+        D = self.kd * self.d_filt                           # CHANGED: use the filtered derivative
+        I_try = self.ki * (self.integral + e * dt)
+        u_unsat = P + I_try + D
+        u = min(max(u_unsat, self.u_min), self.u_max)
 
-        # NEW: decide whether to add this step's error to the running total
         pushing_further_up = u_unsat > self.u_max and e > 0
         pushing_further_down = u_unsat < self.u_min and e < 0
         if not self.anti_windup or not (pushing_further_up or pushing_further_down):

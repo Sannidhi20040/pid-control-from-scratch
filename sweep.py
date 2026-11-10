@@ -31,3 +31,11 @@ for aw in [False, True]:
     rise, os_, settle, sse = metrics(t, x)
     I_max = np.array(pid.history)[:, 1].max()
     print(f"anti-windup {str(aw):5s} | {rise:.3f} s | {os_:5.1f} % | {settle:.2f} s | {I_max:.1f} N")
+
+print()
+print("±1 mm noise | force noise (std) | overshoot")
+for tau in [0.0, 0.02, 0.05]:
+    t, x, u = simulate(pid=PID(300, 400, 30, tau_d=tau), T=5.0, noise=0.001)
+    rise, os_, settle, sse = metrics(t, x)
+    steady = t > 2                                   # only look after the block has settled
+    print(f"tau_d = {tau:.2f} s | {u[steady].std():6.2f} N | {os_:4.1f} %")

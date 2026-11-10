@@ -1,22 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def simulate(pid = None, u=20.0, r=1.0, m=1.0, c=10.0, k= 20.0, T=4.0, dt=0.001):
-    n = int(round(T/dt))
-    t = np.arange(1, n+1)*dt
+def simulate(pid=None, u=20.0, r=1.0, m=1.0, c=10.0, k=20.0, T=4.0, dt=0.001,
+             noise=0.0, seed=0):                       # NEW: noise (m) and random seed
+    rng = np.random.default_rng(seed)                   # NEW: random number generator
+    n = int(round(T / dt))
+    t = np.arange(1, n + 1) * dt
     xs = np.zeros(n)
-    x, v = 0.0, 0.0
     us = np.zeros(n)
+    x, v = 0.0, 0.0
     for i in range(n):
+        y = x + rng.uniform(-noise, noise)             # NEW: what the sensor reports
         if pid is not None:
-            u = pid.update(r, x, dt)
-        
-        a = (u - k*x - c*v)/m
+            u = pid.update(r, y, dt)                   # CHANGED: controller sees y, not x
+        a = (u - k * x - c * v) / m                    # physics still uses the TRUE x
         v = v + a * dt
         x = x + v * dt
         xs[i] = x
         us[i] = u
-    return t,xs,us
+    return t, xs, us
 
 
 if __name__ == '__main__':
