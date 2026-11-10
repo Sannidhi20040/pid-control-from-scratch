@@ -39,3 +39,9 @@ for tau in [0.0, 0.02, 0.05]:
     rise, os_, settle, sse = metrics(t, x)
     steady = t > 2                                   # only look after the block has settled
     print(f"tau_d = {tau:.2f} s | {u[steady].std():6.2f} N | {os_:4.1f} %")
+
+print()
+print("target jumps 0 -> 1 m at t = 0.5 s | peak force")
+for d in ["error", "measurement"]:
+    t, x, u = simulate(pid=PID(300, 400, 30, d_on=d), T=2.0, r_time=0.5)
+    print(f"D on {d:11s} | {u.max():9.1f} N")

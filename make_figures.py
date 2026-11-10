@@ -177,6 +177,55 @@ def fig08_windup():
     plt.close(fig)
     print("saved fig08")
 
+def fig09_noise():
+    fig, axs = plt.subplots(1, 2, figsize=(12, 3.8))
+    for tau, color, name in [(0.0, "tab:blue", "raw D"),
+                             (0.02, "tab:orange", "D filtered (τ = 0.02 s)")]:
+        t, x, u = simulate(pid=PID(300, 400, 30, tau_d=tau), T=5.0, noise=0.001)   # CHANGED: 5 s, same as the table
+        steady = t > 2
+        axs[0].plot(t, u, color=color, linewidth=0.6 if tau == 0 else 1.4,
+                    label=f"{name}: force noise {u[steady].std():.1f} N")
+    axs[0].set(title="Force with ±1 mm sensor noise", xlabel="time (s)", ylabel="force (N)",
+               ylim=(-100, 150))
+
+    # Zoom: rebuild the same noise the controller saw (same seed, same order of draws)
+    t, x, u = simulate(pid=PID(300, 400, 30), T=3.0, noise=0.001)
+    rng = np.random.default_rng(0)
+    noise_vals = np.array([rng.uniform(-0.001, 0.001) for _ in range(len(t))])
+    y = x + noise_vals
+    zoom = (t > 2.0) & (t < 2.1)
+    axs[1].plot(t[zoom], y[zoom] * 1000, color="gray", linewidth=0.8, label="what the sensor reports")
+    axs[1].plot(t[zoom], x[zoom] * 1000, color="tab:green", linewidth=2, label="true position")
+    axs[1].set(title="Zoom: 0.1 s of sensor readings", xlabel="time (s)", ylabel="position (mm)")
+
+    for ax in axs:
+        ax.legend(fontsize=8)
+        ax.grid(True)
+    fig.tight_layout()
+    fig.savefig("figures/fig09_noise.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print("saved fig09")
+
+def fig10_kick():
+    fig, axs = plt.subplots(1, 2, figsize=(12, 3.8))
+    for d, color in [("error", "tab:red"), ("measurement", "tab:green")]:
+        t, x, u = simulate(pid=PID(300, 400, 30, d_on=d), T=1.5, r_time=0.5)
+        axs[0].plot(t, x, color=color, label=f"D on {d}")
+        axs[1].plot(t, u, color=color, label=f"D on {d} (peak {u.max():,.0f} N)")
+    r_line = np.where(t >= 0.5, 1.0, 0.0)              # the target: 0, then 1 from t = 0.5 s
+    axs[0].plot(t, r_line, "k--", label="target (jumps at 0.5 s)")
+    axs[0].set(title="Position", xlabel="time (s)", ylabel="position (m)")
+    axs[1].set_yscale("symlog", linthresh=100)        # log-like scale so 300 N and 30,000 N both show
+    axs[1].set(title="Force (log-like scale)", xlabel="time (s)", ylabel="force (N)")
+    for ax in axs:
+        ax.legend(fontsize=8)
+        ax.grid(True)
+    fig.suptitle("Derivative kick: the target jumps from 0 to 1 m at t = 0.5 s")
+    fig.tight_layout()
+    fig.savefig("figures/fig10_kick.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print("saved fig10")
+
 if __name__ == "__main__":
     fig01_open_loop()
     fig02_metrics()
@@ -186,3 +235,5 @@ if __name__ == "__main__":
     fig06_compare()
     fig07_parts()
     fig08_windup()
+    fig09_noise()
+    fig10_kick()
