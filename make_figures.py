@@ -226,6 +226,30 @@ def fig10_kick():
     plt.close(fig)
     print("saved fig10")
 
+def fig11_period():
+    fig, axs = plt.subplots(1, 2, figsize=(12, 3.8))
+    for Ts in [0.001, 0.02, 0.05, 0.07]:
+        t, x, u = simulate(pid=PID(300, 400, 30), T=3.0, Ts=Ts)
+        axs[0].plot(t, x, label=f"update every {Ts*1000:.0f} ms (peak {x.max():.2f} m)")
+    axs[0].axhline(1.0, linestyle="--", color="k", label="target 1 m")
+    axs[0].set(title="Same gains, slower and slower controller", xlabel="time (s)",
+               ylabel="position (m)", ylim=(-1, 3))
+
+    for Ts, color, name in [(0.001, "tab:green", "every 1 ms"), (0.05, "tab:orange", "every 50 ms")]:
+        t, x, u = simulate(pid=PID(300, 400, 30), T=0.5, Ts=Ts)
+        axs[1].plot(t, u, color=color, label=f"force updated {name}")
+    axs[1].set(title="A slow controller holds each force until the next update",
+               xlabel="time (s)", ylabel="force (N)")
+
+    for ax in axs:
+        ax.legend(fontsize=8)
+        ax.grid(True)
+    fig.suptitle("Slow update rate, gains (300, 400, 30), no force limit")
+    fig.tight_layout()
+    fig.savefig("figures/fig11_period.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print("saved fig11")
+
 if __name__ == "__main__":
     fig01_open_loop()
     fig02_metrics()
@@ -237,3 +261,4 @@ if __name__ == "__main__":
     fig08_windup()
     fig09_noise()
     fig10_kick()
+    fig11_period()

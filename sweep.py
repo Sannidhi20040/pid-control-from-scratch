@@ -45,3 +45,9 @@ print("target jumps 0 -> 1 m at t = 0.5 s | peak force")
 for d in ["error", "measurement"]:
     t, x, u = simulate(pid=PID(300, 400, 30, d_on=d), T=2.0, r_time=0.5)
     print(f"D on {d:11s} | {u.max():9.1f} N")
+
+print()
+print("controller period | peak | peak above target | max |x| (blow-up check)")
+for Ts in [0.001, 0.02, 0.05, 0.06, 0.07, 0.1]:
+    t, x, u = simulate(pid=PID(300, 400, 30), T=3.0, Ts=Ts)
+    print(f"{Ts*1000:5.0f} ms | {x.max():8.3f} m | {(x.max()-1)*100:7.1f} % | {np.abs(x).max():8.2f} m")
