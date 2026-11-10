@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from plant import simulate
+from plant import simulate,simulate_lag3
 from pid import PID
 from metrics import metrics
 
@@ -250,6 +250,42 @@ def fig11_period():
     plt.close(fig)
     print("saved fig11")
 
+def fig12_ku():
+    plt.figure(figsize=(7, 4))
+    for kp in [4, 6, 8.01, 9]:
+        t, y, u = simulate_lag3(PID(kp, 0, 0), T=25.0)
+        plt.plot(t, y, linewidth=2.2 if kp == 8.01 else 1.2, label=f"P only, Kp = {kp}")
+    plt.ylim(-0.6, 2.4)
+    plt.xlabel("time (s)")
+    plt.ylabel("output (no units)")
+    plt.title("Finding Ku on 1/(s+1)³: raise Kp until the swing neither grows nor dies")
+    plt.legend(fontsize=8, loc="lower right")
+    plt.grid(True)
+    plt.savefig("figures/fig12_ku.png", dpi=150, bbox_inches="tight")
+    plt.close()
+    print("saved fig12")
+
+
+def fig13_zn():
+    plt.figure(figsize=(7, 4))
+    steps = [("1. ZN table", (4.81, 2.65, 2.18)), ("2. less I", (4.81, 1.0, 2.18)),
+             ("3. more D", (4.81, 1.0, 2.75)), ("4. less P and I", (3.6, 0.7, 2.75))]
+    for name, gains in steps:
+        t, y, u = simulate_lag3(PID(*gains), T=25.0)
+        rise, os_, settle, sse = metrics(t, y)
+        plt.plot(t, y, linewidth=2.2 if name.startswith("4") else 1.3,
+                 label=f"{name} {gains}: overshoot {os_:.0f}%, settle {settle:.1f} s")
+    plt.axhline(1.0, linestyle="--", color="k", label="target 1")
+    plt.xlim(0, 15)
+    plt.xlabel("time (s)")
+    plt.ylabel("output (no units)")
+    plt.title("Ziegler–Nichols, then improving it by hand")
+    plt.legend(fontsize=7, loc="lower right")
+    plt.grid(True)
+    plt.savefig("figures/fig13_zn.png", dpi=150, bbox_inches="tight")
+    plt.close()
+    print("saved fig13")
+
 if __name__ == "__main__":
     fig01_open_loop()
     fig02_metrics()
@@ -262,3 +298,5 @@ if __name__ == "__main__":
     fig09_noise()
     fig10_kick()
     fig11_period()
+    fig12_ku()
+    fig13_zn()

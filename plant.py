@@ -25,6 +25,21 @@ def simulate(pid=None, u=20.0, r=1.0, m=1.0, c=10.0, k=20.0, T=4.0, dt=0.001,
         us[i] = u                                     # between updates u is simply held
     return t, xs, us
 
+def simulate_lag3(pid, r=1.0, T=25.0, dt=0.001):
+    """Second system for Section 8: three first-order lags in series, 1/(s+1)^3."""
+    n = int(round(T / dt))
+    t = np.arange(1, n + 1) * dt
+    ys = np.zeros(n)
+    us = np.zeros(n)
+    y1, y2, y3 = 0.0, 0.0, 0.0
+    for i in range(n):
+        u = pid.update(r, y3, dt)         # the controller only sees the LAST stage
+        y1 = y1 + (u - y1) * dt           # stage 1 follows the controller
+        y2 = y2 + (y1 - y2) * dt          # stage 2 follows stage 1
+        y3 = y3 + (y2 - y3) * dt          # stage 3 follows stage 2
+        ys[i] = y3
+        us[i] = u
+    return t, ys, us
 
 if __name__ == '__main__':
     t, x, u = simulate()
