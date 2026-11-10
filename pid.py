@@ -5,21 +5,27 @@ class PID:
         self.kd = kd
         self.integral = 0.0
         self.e_prev = None
+        self.history = []                        # (P, I, D) for every step
 
-    def update (self, r, y, dt):
-        e = r -y
-        self.integral = self.integral + e*dt
+    def update(self, r, y, dt):
+        e = r - y
+        self.integral = self.integral + e * dt
         if self.e_prev is None:
             deriv = 0.0
         else:
-            deriv = (e- self.e_prev)/dt
-        u = self.kp*e + self.ki*self.integral + self.kd*deriv
+            deriv = (e - self.e_prev) / dt
+        P = self.kp * e                          # CHANGED: name each part...
+        I = self.ki * self.integral
+        D = self.kd * deriv
+        u = P + I + D                            # ...then add them (same maths as before)
+        self.history.append((P, I, D))           # NEW: remember the three parts
         self.e_prev = e
-        return u 
+        return u
+
 
 if __name__ == "__main__":
     from plant import simulate
     from metrics import metrics
-    t, x, u = simulate(pid = PID(300, 400, 30),T= 6.0)
+    t, x, u = simulate(pid=PID(300, 400, 30), T=6.0)
     print("first three forces:", u[:3])
-    print(metrics(t,x))
+    print(metrics(t, x))
