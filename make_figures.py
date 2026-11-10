@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from plant import simulate,simulate_lag3
+from plant import simulate, simulate_lag3
 from pid import PID
 from metrics import metrics
 
@@ -26,7 +26,7 @@ def fig01_open_loop():
 
 
 def fig02_metrics():
-    t, x, u = simulate(pid=PID(300, 400, 30), T=6.0)     # CHANGED: 6 s so the final value is truly final
+    t, x, u = simulate(pid=PID(300, 400, 30), T=6.0)     # 6 s so the final value is truly final
     rise, os_, settle, sse = metrics(t, x)
     xf = x[-1]
     i10 = np.argmax(x >= 0.1 * xf)          # same indexes metrics() uses internally
@@ -42,13 +42,13 @@ def fig02_metrics():
     plt.annotate(f"rise time {rise:.2f} s\n(10% → 90%)", xy=(t[i90], x[i90]),
                  xytext=(0.55, 0.45), arrowprops=dict(arrowstyle="->"))
     plt.annotate(f"overshoot {os_:.1f}%\n(peak {x[ipk]:.3f} m)", xy=(t[ipk], x[ipk]),
-                 xytext=(0.75, 1.22), arrowprops=dict(arrowstyle="->"))   # CHANGED: two lines, clear of the purple line
+                 xytext=(0.75, 1.22), arrowprops=dict(arrowstyle="->"))
     plt.axvline(settle, linestyle=":", color="purple")
     plt.text(settle + 0.03, 0.6, f"settling time {settle:.2f} s\n(stays in band after this)",
              color="purple")
     plt.text(2.1, 0.85, f"steady-state error ≈ 0\n(final {xf:.3f} m)")
 
-    plt.xlim(0, 3)                          # CHANGED: show 0–3 s even though we simulated 6 s
+    plt.xlim(0, 3)                          # show 0–3 s even though we simulated 6 s
     plt.ylim(0, 1.4)
     plt.xlabel("time (s)")
     plt.ylabel("position (m)")
@@ -57,7 +57,7 @@ def fig02_metrics():
     plt.grid(True)
     plt.savefig("figures/fig02_metrics.png", dpi=150, bbox_inches="tight")
     plt.close()
-    print(f"saved fig02 | rise {rise:.3f} s, overshoot {os_:.1f} %, settle {settle:.2f} s")   # CHANGED: print the numbers
+    print(f"saved fig02 | rise {rise:.3f} s, overshoot {os_:.1f} %, settle {settle:.2f} s")
 
 
 def fig03_p_sweep():
@@ -80,7 +80,7 @@ def fig04_pi():
     plt.figure(figsize=(7, 4))
     for ki in [0, 100, 400, 1200]:
         t, x, u = simulate(pid=PID(300, ki, 0), T=8.0)       # 8 s so the values have (nearly) settled
-        plt.plot(t, x, label=f"Ki = {ki} (x at 8 s = {x[-1]:.3f} m)")   # CHANGED: honest label (Ki = 100 is still creeping)
+        plt.plot(t, x, label=f"Ki = {ki} (x at 8 s = {x[-1]:.3f} m)")
     plt.axhline(1.0, linestyle="--", color="k", label="target 1 m")
     plt.xlim(0, 3)                                            # show only 0–3 s
     plt.xlabel("time (s)")
@@ -150,6 +150,7 @@ def fig07_parts():
     plt.close()
     print(f"saved fig07 | at t = 3 s: P = {P[-1]:.2f}, I = {I[-1]:.2f}, D = {D[-1]:.2f} N")
 
+
 def fig08_windup():
     fig, axs = plt.subplots(1, 3, figsize=(13, 3.8))     # 1 row, 3 graphs side by side
     for aw, color, name in [(False, "tab:red", "no anti-windup"),
@@ -177,16 +178,17 @@ def fig08_windup():
     plt.close(fig)
     print("saved fig08")
 
+
 def fig09_noise():
     fig, axs = plt.subplots(1, 2, figsize=(12, 3.8))
     for tau, color, name in [(0.0, "tab:blue", "raw D"),
                              (0.02, "tab:orange", "D filtered (τ = 0.02 s)")]:
-        t, x, u = simulate(pid=PID(300, 400, 30, tau_d=tau), T=5.0, noise=0.001)   # CHANGED: 5 s, same as the table
+        t, x, u = simulate(pid=PID(300, 400, 30, tau_d=tau), T=5.0, noise=0.001)   # 5 s, same as the table
         steady = t > 2
         axs[0].plot(t, u, color=color, linewidth=0.6 if tau == 0 else 1.4,
                     label=f"{name}: force noise {u[steady].std():.1f} N")
     axs[0].set(title="Force with ±1 mm sensor noise", xlabel="time (s)", ylabel="force (N)",
-               ylim=(-100, 150))
+               ylim=(-100, 150), xlim=(0, 3))                          # CHANGED: show 0–3 s of the 5 s run
 
     # Zoom: rebuild the same noise the controller saw (same seed, same order of draws)
     t, x, u = simulate(pid=PID(300, 400, 30), T=3.0, noise=0.001)
@@ -205,6 +207,7 @@ def fig09_noise():
     fig.savefig("figures/fig09_noise.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
     print("saved fig09")
+
 
 def fig10_kick():
     fig, axs = plt.subplots(1, 2, figsize=(12, 3.8))
@@ -226,6 +229,7 @@ def fig10_kick():
     plt.close(fig)
     print("saved fig10")
 
+
 def fig11_period():
     fig, axs = plt.subplots(1, 2, figsize=(12, 3.8))
     for Ts in [0.001, 0.02, 0.05, 0.07]:
@@ -234,21 +238,23 @@ def fig11_period():
     axs[0].axhline(1.0, linestyle="--", color="k", label="target 1 m")
     axs[0].set(title="Same gains, slower and slower controller", xlabel="time (s)",
                ylabel="position (m)", ylim=(-1, 3))
+    axs[0].legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2)   # CHANGED: legend below the graph
 
     for Ts, color, name in [(0.001, "tab:green", "every 1 ms"), (0.05, "tab:orange", "every 50 ms")]:
         t, x, u = simulate(pid=PID(300, 400, 30), T=0.5, Ts=Ts)
         axs[1].plot(t, u, color=color, label=f"force updated {name}")
     axs[1].set(title="A slow controller holds each force until the next update",
                xlabel="time (s)", ylabel="force (N)")
+    axs[1].legend(fontsize=8)                                                            # CHANGED: legend for the right panel only
 
     for ax in axs:
-        ax.legend(fontsize=8)
-        ax.grid(True)
+        ax.grid(True)                                                                    # CHANGED: loop now only adds the grid
     fig.suptitle("Slow update rate, gains (300, 400, 30), no force limit")
     fig.tight_layout()
     fig.savefig("figures/fig11_period.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
     print("saved fig11")
+
 
 def fig12_ku():
     plt.figure(figsize=(7, 4))
@@ -274,7 +280,7 @@ def fig13_zn():
         t, y, u = simulate_lag3(PID(*gains), T=25.0)
         rise, os_, settle, sse = metrics(t, y)
         plt.plot(t, y, linewidth=2.2 if name.startswith("4") else 1.3,
-                 label=f"{name} {gains}: overshoot {os_:.0f}%, settle {settle:.1f} s")
+                 label=f"{name} {gains}: overshoot {os_:.1f}%, settle {settle:.1f} s")   # CHANGED: .1f so it shows 0.8%
     plt.axhline(1.0, linestyle="--", color="k", label="target 1")
     plt.xlim(0, 15)
     plt.xlabel("time (s)")
@@ -285,6 +291,7 @@ def fig13_zn():
     plt.savefig("figures/fig13_zn.png", dpi=150, bbox_inches="tight")
     plt.close()
     print("saved fig13")
+
 
 if __name__ == "__main__":
     fig01_open_loop()
