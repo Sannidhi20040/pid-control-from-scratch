@@ -292,6 +292,35 @@ def fig13_zn():
     plt.close()
     print("saved fig13")
 
+def fig14():
+    """Final design: (150, 300, 15) with every real-world problem switched on."""
+    pid = PID(150, 300, 15, u_min=-30, u_max=30, anti_windup=True,
+              tau_d=0.02, d_on="measurement")
+    t, x, u = simulate(pid=pid, T=5.0, noise=0.001)
+    rise, os_, settle, sse = metrics(t, x)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    fig.suptitle("Final design: Kp=150, Ki=300, Kd=15 (30 N limit, ±1 mm noise)")
+
+    ax1.plot(t, x, lw=2, label=f"position: rise {rise:.2f} s, overshoot {os_:.2f} %, settle {settle:.2f} s")
+    ax1.axhline(1.0, color="k", ls="--", label="target 1 m")
+    ax1.axhspan(0.98, 1.02, color="green", alpha=0.15, label="±2 % band")
+    ax1.axvline(settle, color="gray", ls=":", label=f"settled at {settle:.2f} s")
+    ax1.set_ylabel("position (m)")
+    ax1.legend(loc="lower right"); ax1.grid(True)
+
+    ax2.plot(t, u, lw=1, color="tab:red", label=f"motor force (noise {u[t > 4].std():.2f} N after settling)")
+    ax2.axhline(30, color="k", ls=":", label="30 N motor limit")
+    ax2.axhline(20, color="tab:green", ls="--", label="20 N = force to hold the spring at 1 m")
+    ax2.set_xlabel("time (s)"); ax2.set_ylabel("force (N)")
+    ax2.set_ylim(0, 35)
+    ax2.set_xlim(0, 3)       # simulate 5 s (to measure noise), show the first 3 s
+    ax2.legend(loc="lower right"); ax2.grid(True)
+
+    fig.tight_layout()
+    fig.savefig("figures/fig14_final.png", dpi=150)
+    plt.close(fig)
+
 
 if __name__ == "__main__":
     fig01_open_loop()
@@ -307,3 +336,4 @@ if __name__ == "__main__":
     fig11_period()
     fig12_ku()
     fig13_zn()
+    fig14()
