@@ -1,1 +1,27 @@
 fig01: A constant 20 N push reaches 1 m only when the spring is exactly 20 N/m; with 16 or 25 N/m it stops at 1.25 or 0.80 m and nothing corrects it.
+
+fig02: One step response with all four measures marked: rise time (10 % to 90 % of the final value), overshoot (highest point above the final value), settling time (last time it leaves the ±2 % band) and steady-state error (gap between target and final value).
+
+fig03: P only at several strengths: a stronger Kp gets closer to the target but never reaches it (final position = Kp / (20 + Kp)), and overshoots more; every final value matches this formula to within 0.1 %.
+
+fig04: Adding I (Ki = 100): the integral keeps growing while any error remains, so the block ends at exactly 1 m instead of stopping short.
+
+fig05: Adding D: the extra braking force raises the damping ratio from c / (2√(m(k+Kp))) to (c+Kd) / (2√(m(k+Kp))), so the bouncing of P-only is damped out.
+
+fig06: P, PI, PD and PID on one graph: only the controllers with I reach the target exactly, and only those with D avoid large overshoot; full PID does both.
+
+fig07: The three PID forces over time (300, 400, 30): P does the early work and fades, D brakes hard (about -180 N) while the block is fastest, and I overfills to about 45 N before unwinding to the 20 N needed to hold the spring, which is why PID takes 1.47 s to settle.
+
+fig08: With a 30 N motor limit, the I part keeps growing while the motor is stuck at its limit (up to 114 N), causing 24 % overshoot; clamping anti-windup stops it integrating during saturation, so I rises only to the 20 N the spring needs and overshoot drops to 0 %.
+
+fig09: ±1 mm sensor noise makes the D part jumpy, shaking the force by 25.3 N; a 20 ms low-pass filter on D reduces this to 1.0 N with almost no change to the position response.
+
+fig10: When the target jumps suddenly, D on error produces a 30 300 N spike in a single step ("derivative kick"); taking D on the measurement instead gives 300 N (P only) with the same final response.
+
+fig11: The slower the controller updates, the worse the response: the force becomes a staircase, overshoot grows, and at a 70 ms update the loop becomes unstable.
+
+fig12: Ziegler–Nichols step 1 on 1/(s+1)³: raising Kp until the swing neither grows nor shrinks gives the ultimate gain Ku = 8.01 and swing period Tu = 3.62 s.
+
+fig13: The Ziegler–Nichols table gains (4.81, 2.65, 2.18) overshoot 52 % and settle in 9.9 s; lowering I, raising D, then lowering P and I by hand brings this to 1 % overshoot and 2.6 s settling.
+
+fig14: Final design (150, 300, 15) with every real-world problem on: the motor is at its 30 N limit for the first 0.3 s, then hands over smoothly to the 20 N needed to hold the spring, settling in 0.79 s with 0.22 % overshoot and 0.52 N force noise.
