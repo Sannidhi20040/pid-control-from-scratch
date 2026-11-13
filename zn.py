@@ -24,7 +24,15 @@ def measure_tu(kp):
 if __name__ == "__main__":
     from metrics import metrics
 
-    Ku = 8.01                                   # from the growth-ratio search (theory: 8)
+    # Find Ku: the gain where the swing neither grows (ratio > 1) nor dies (ratio < 1)
+    lo, hi = 6.0, 10.0
+    for _ in range(12):                         # bisection: halve the range 12 times
+        mid = (lo + hi) / 2
+        if growth_ratio(mid) < 1:
+            lo = mid                            # still dying out: Ku is higher
+        else:
+            hi = mid                            # growing: Ku is lower
+    Ku = round((lo + hi) / 2, 2)                # 8.01 (theory: 8)
     Tu = measure_tu(Ku)
     print(f"Ku = {Ku:.2f}, Tu = {Tu:.3f} s   (theory: 8, 2*pi/sqrt(3) = {2*np.pi/np.sqrt(3):.3f} s)")
 

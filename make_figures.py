@@ -4,8 +4,121 @@ import matplotlib.pyplot as plt
 from plant import simulate, simulate_lag3
 from pid import PID
 from metrics import metrics
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
 os.makedirs("figures", exist_ok=True)      # create the folder if it doesn't exist yet
+
+def fig00():
+    """The feedback loop diagram for Section 1."""
+    fig, ax = plt.subplots(figsize=(9, 3.6))
+    ax.set_xlim(0, 10); ax.set_ylim(0, 4); ax.axis("off")
+
+    def box(x, y, w, h, text, color):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.05",
+                                    fc=color, ec="black", lw=1.5))
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=11)
+
+    def arrow(p, q, label=None):
+        ax.add_patch(FancyArrowPatch(p, q, arrowstyle="-|>", mutation_scale=16,
+                                     lw=1.5, color="black"))
+        if label:
+            ax.text((p[0] + q[0]) / 2, (p[1] + q[1]) / 2 + 0.18, label,
+                    ha="center", va="bottom", fontsize=9.5)
+
+    # comparison point: error = target - measured
+    ax.add_patch(plt.Circle((2.0, 2.8), 0.25, fc="white", ec="black", lw=1.5))
+    ax.text(2.0, 2.8, "Σ", ha="center", va="center", fontsize=12)
+    ax.text(1.62, 3.08, "+", fontsize=11)
+    ax.text(2.08, 2.33, "−", fontsize=13)
+
+    box(3.3, 2.35, 2.0, 0.9, "Controller\n(PID)", "#dbe9f7")
+    box(6.6, 2.35, 2.2, 0.9, "Plant\n(mass–spring–damper)", "#fde2c8")
+    box(4.6, 0.45, 2.0, 0.8, "Sensor", "#dff2dc")
+
+    arrow((0.2, 2.8), (1.75, 2.8), "target r\n(1 m)")
+    arrow((2.25, 2.8), (3.3, 2.8), "error e\n= r − y")
+    arrow((5.4, 2.8), (6.6, 2.8), "force u\n(N)")
+    arrow((8.9, 2.8), (9.9, 2.8), "position x\n(m)")
+
+    # feedback path: plant -> sensor -> back to the comparison point
+    ax.plot([9.4, 9.4], [2.8, 0.85], color="black", lw=1.5)
+    arrow((9.4, 0.85), (6.6, 0.85))
+    ax.plot([4.6, 2.0], [0.85, 0.85], color="black", lw=1.5)
+    arrow((2.0, 0.85), (2.0, 2.55))
+    ax.text(3.3, 0.95, "measured y (m)", ha="center", va="bottom", fontsize=9.5)
+
+    ax.set_title("The feedback loop: measure, compare, correct, repeat", fontsize=12)
+    fig.tight_layout()
+    fig.savefig("figures/fig00_loop.png", dpi=200)
+    plt.close(fig)
+
+def fig00b():
+    """The test system: forces on the block, for Section 3."""
+    from matplotlib.patches import Rectangle
+    fig, ax = plt.subplots(figsize=(9, 3.8))
+    ax.set_xlim(-0.6, 10.2); ax.set_ylim(-1.15, 3.7); ax.axis("off")
+
+    # wall with hatching
+    ax.add_patch(Rectangle((-0.35, 0.0), 0.35, 2.6, fc="#dddddd", ec="black", hatch="///", lw=1.2))
+    # ground
+    ax.plot([0, 9.8], [0, 0], color="black", lw=1.2)
+    for gx in np.arange(0.2, 9.8, 0.4):
+        ax.plot([gx, gx - 0.2], [0, -0.15], color="gray", lw=0.8)
+
+    bx0, bw, bh = 4.6, 1.6, 1.6   # block
+
+    # spring (top), zig-zag from wall to block
+    y_s = 1.95
+    xs = np.linspace(0.0, bx0, 200)
+    ph = (xs - 0.6) / (bx0 - 1.2) * 9
+    tri = 0.22 * (2 * np.abs(2 * (ph - np.floor(ph + 0.5))) - 1)
+    zig = np.where((xs > 0.6) & (xs < bx0 - 0.6), tri, 0)
+    ax.plot(xs, y_s + zig, color="black", lw=1.6)
+    ax.text(bx0 / 2, y_s - 0.55, "spring  k = 20 N/m", ha="center", fontsize=10)
+
+    # damper (bottom): rod + cylinder + piston
+    y_d = 0.75
+    ax.plot([0, 1.6], [y_d, y_d], color="black", lw=1.6)
+    ax.plot([1.6, 2.9], [y_d + 0.28, y_d + 0.28], color="black", lw=1.6)
+    ax.plot([1.6, 2.9], [y_d - 0.28, y_d - 0.28], color="black", lw=1.6)
+    ax.plot([1.6, 1.6], [y_d - 0.28, y_d + 0.28], color="black", lw=1.6)
+    ax.plot([2.4, 2.4], [y_d - 0.2, y_d + 0.2], color="black", lw=2.2)
+    ax.plot([2.4, bx0], [y_d, y_d], color="black", lw=1.6)
+    ax.text(2.25, y_d - 0.62, "damper  c = 10 N·s/m", ha="center", fontsize=10)
+
+    # block
+    ax.add_patch(Rectangle((bx0, 0.05), bw, bh * 1.55, fc="#fde2c8", ec="black", lw=1.6))
+    ax.text(bx0 + bw / 2, 1.3, "block\nm = 1 kg", ha="center", va="center", fontsize=11)
+
+    def arrow(x0, x1, y, color, label, ha):
+        ax.add_patch(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=18,
+                                     lw=2.2, color=color))
+        ax.text(x1 + (0.1 if ha == "left" else -0.1), y, label, ha=ha, va="center",
+                fontsize=10.5, color=color)
+
+    # motor push to the right
+    ax.add_patch(FancyArrowPatch((bx0 + bw, 1.3), (bx0 + bw + 1.6, 1.3), arrowstyle="-|>",
+                                 mutation_scale=18, lw=2.2, color="tab:blue"))
+    ax.text(bx0 + bw + 0.8, 1.55, "motor push  u", ha="center", fontsize=10.5, color="tab:blue")
+    # resisting forces to the left (drawn above the block)
+    arrow(bx0 + 1.2, bx0 - 0.6, 3.45, "tab:red", "spring pulls back  k·x", "right")
+    arrow(bx0 + 1.2, bx0 - 0.6, 3.0, "tab:orange", "damper resists motion  c·ẋ", "right")
+
+    # position axis
+    ya = -0.55
+    ax.add_patch(FancyArrowPatch((bx0, ya), (9.9, ya), arrowstyle="-|>", mutation_scale=14, lw=1.2))
+    ax.plot([bx0, bx0], [ya - 0.1, ya + 0.1], color="black")
+    ax.text(bx0, ya - 0.33, "x = 0 (start)", ha="center", fontsize=9.5)
+    xt = 9.0
+    ax.plot([xt, xt], [ya - 0.1, 2.4], color="green", ls="--", lw=1.3)
+    ax.text(xt, ya - 0.33, "x = 1 m (target)", ha="center", fontsize=9.5, color="green")
+    ax.text(9.95, ya + 0.15, "x", fontsize=11, ha="right")
+
+    ax.set_title("The test system: forces on the block   (m·ẍ = u − k·x − c·ẋ)", fontsize=12, pad=2)
+    fig.tight_layout()
+    fig.savefig("figures/fig00b_block.png", dpi=200, facecolor="white")
+    plt.close(fig)
+    print("saved fig00b")
 
 
 def fig01_open_loop():
@@ -188,7 +301,7 @@ def fig09_noise():
         axs[0].plot(t, u, color=color, linewidth=0.6 if tau == 0 else 1.4,
                     label=f"{name}: force noise {u[steady].std():.1f} N")
     axs[0].set(title="Force with ±1 mm sensor noise", xlabel="time (s)", ylabel="force (N)",
-               ylim=(-100, 150), xlim=(0, 3))                          # CHANGED: show 0–3 s of the 5 s run
+               ylim=(-100, 150), xlim=(0, 3))                          # show 0–3 s of the 5 s run
 
     # Zoom: rebuild the same noise the controller saw (same seed, same order of draws)
     t, x, u = simulate(pid=PID(300, 400, 30), T=3.0, noise=0.001)
@@ -238,17 +351,17 @@ def fig11_period():
     axs[0].axhline(1.0, linestyle="--", color="k", label="target 1 m")
     axs[0].set(title="Same gains, slower and slower controller", xlabel="time (s)",
                ylabel="position (m)", ylim=(-1, 3))
-    axs[0].legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2)   # CHANGED: legend below the graph
+    axs[0].legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2)   # legend below the graph
 
     for Ts, color, name in [(0.001, "tab:green", "every 1 ms"), (0.05, "tab:orange", "every 50 ms")]:
         t, x, u = simulate(pid=PID(300, 400, 30), T=0.5, Ts=Ts)
         axs[1].plot(t, u, color=color, label=f"force updated {name}")
     axs[1].set(title="A slow controller holds each force until the next update",
                xlabel="time (s)", ylabel="force (N)")
-    axs[1].legend(fontsize=8)                                                            # CHANGED: legend for the right panel only
+    axs[1].legend(fontsize=8)
 
     for ax in axs:
-        ax.grid(True)                                                                    # CHANGED: loop now only adds the grid
+        ax.grid(True)
     fig.suptitle("Slow update rate, gains (300, 400, 30), no force limit")
     fig.tight_layout()
     fig.savefig("figures/fig11_period.png", dpi=150, bbox_inches="tight")
@@ -280,7 +393,7 @@ def fig13_zn():
         t, y, u = simulate_lag3(PID(*gains), T=25.0)
         rise, os_, settle, sse = metrics(t, y)
         plt.plot(t, y, linewidth=2.2 if name.startswith("4") else 1.3,
-                 label=f"{name} {gains}: overshoot {os_:.1f}%, settle {settle:.1f} s")   # CHANGED: .1f so it shows 0.8%
+                 label=f"{name} {gains}: overshoot {os_:.1f}%, settle {settle:.1f} s")
     plt.axhline(1.0, linestyle="--", color="k", label="target 1")
     plt.xlim(0, 15)
     plt.xlabel("time (s)")
@@ -314,15 +427,19 @@ def fig14():
     ax2.axhline(20, color="tab:green", ls="--", label="20 N = force to hold the spring at 1 m")
     ax2.set_xlabel("time (s)"); ax2.set_ylabel("force (N)")
     ax2.set_ylim(0, 35)
+    ax2.set_xlim(0, 3)       # simulate 5 s
     ax2.set_xlim(0, 3)       # simulate 5 s (to measure noise), show the first 3 s
     ax2.legend(loc="lower right"); ax2.grid(True)
 
     fig.tight_layout()
     fig.savefig("figures/fig14_final.png", dpi=150)
     plt.close(fig)
+    print("saved fig14")
 
 
 if __name__ == "__main__":
+    fig00()
+    fig00b()
     fig01_open_loop()
     fig02_metrics()
     fig03_p_sweep()

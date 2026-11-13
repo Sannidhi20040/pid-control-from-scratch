@@ -3,7 +3,7 @@ import numpy as np
 
 class PID:
     def __init__(self, kp, ki, kd, u_min=-np.inf, u_max=np.inf, anti_windup=False,
-                 tau_d=0.0, d_on="error"):          # NEW: d_on = "error" or "measurement"
+                 tau_d=0.0, d_on="error"):          # d_on = "error" or "measurement"
         self.kp = kp
         self.ki = ki
         self.kd = kd
@@ -11,17 +11,17 @@ class PID:
         self.u_max = u_max
         self.anti_windup = anti_windup      # True = clamping anti-windup
         self.tau_d = tau_d                  # D filter time constant (s); 0 = no filter
-        self.d_on = d_on                    # NEW: where D gets its rate of change from
+        self.d_on = d_on                    # where D gets its rate of change from
         self.integral = 0.0                 # running total of error (m·s)
         self.e_prev = None                  # previous error
-        self.y_prev = None                  # NEW: previous measurement
+        self.y_prev = None                  # previous measurement
         self.d_filt = 0.0                   # smoothed derivative
         self.history = []                   # (P, I, D) for every step
 
     def update(self, r, y, dt):
         e = r - y
 
-        # CHANGED: the derivative comes from the measurement or from the error
+        # the derivative comes from the measurement or from the error
         if self.d_on == "measurement":
             if self.y_prev is None:
                 deriv = 0.0
@@ -49,7 +49,7 @@ class PID:
         I = self.ki * self.integral
         self.history.append((P, I, D))
         self.e_prev = e
-        self.y_prev = y                      # NEW: remember the measurement
+        self.y_prev = y                      # remember the measurement
         return u
 
 
@@ -59,6 +59,6 @@ if __name__ == "__main__":
     t, x, u = simulate(pid=PID(300, 400, 30), T=6.0)
     print("D on error:       first three forces:", u[:3])
     print(metrics(t, x))
-    t, x, u = simulate(pid=PID(300, 400, 30, d_on="measurement"), T=6.0)   # NEW: second check
+    t, x, u = simulate(pid=PID(300, 400, 30, d_on="measurement"), T=6.0)
     print("D on measurement: first three forces:", u[:3])
     print(metrics(t, x))

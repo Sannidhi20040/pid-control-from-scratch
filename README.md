@@ -25,16 +25,22 @@ The full reasoning is in the report.
 
 ## Quick start
 
-    git clone <your repo URL>
-    cd assign_mmL
+    git clone https://github.com/Sannidhi20040/pid-control-from-scratch.git
+    cd pid-control-from-scratch
     python3 -m venv .venv
     source .venv/bin/activate        # Windows: .venv\Scripts\activate
     pip install -r requirements.txt
 
     python checks.py                 # 11 checks: simulation vs theory, all should PASS
-    python make_figures.py           # regenerates every graph into figures/
+    python make_figures.py           # regenerates every figure into figures/
 
-The sensor noise uses a fixed random seed, so everyone gets identical graphs.
+To reproduce the tables in the report:
+
+    python sweep.py                  # P sweep vs formulas, P/PI/PD/PID, real-world problems
+    python zn.py                     # Ziegler–Nichols: finds Ku and Tu, then the recipe gains
+    python tune.py                   # candidate gains vs targets, stress test of the final choice
+
+The sensor noise uses a fixed random seed, so everyone gets identical graphs and numbers.
 
 ## Files
 
@@ -44,17 +50,19 @@ The sensor noise uses a fixed random seed, so everyone gets identical graphs.
 | `pid.py` | The PID class: limits, clamping anti-windup, derivative filter, derivative on measurement |
 | `metrics.py` | Rise time, overshoot, settling time and steady-state error from a response |
 | `sweep.py` | Prints the tables: P sweep vs formulas, P/PI/PD/PID, windup, noise, kick, update rate |
-| `zn.py` | Ziegler–Nichols: finds Ku and Tu on 1/(s+1)³ and computes the ZN gains |
+| `zn.py` | Ziegler–Nichols: searches for Ku, measures Tu on 1/(s+1)³ and computes the ZN gains |
 | `tune.py` | Compares candidate gains against my targets and stress-tests the final choice |
 | `checks.py` | Automatic checks that the simulation agrees with the formulas |
-| `make_figures.py` | Draws every figure in the report |
+| `make_figures.py` | Draws every figure and diagram in the report |
 
 ## Figures
 
-`python make_figures.py` saves all 14 into `figures/`.
+`python make_figures.py` saves all 16 into `figures/`.
 
 | File | Shows | Report section |
 |---|---|---|
+| `fig00_loop.png` | The feedback loop: target → controller → plant → sensor | 1 |
+| `fig00b_block.png` | The test system and the forces on the block | 3 |
 | `fig01_open_loop.png` | Open-loop response (constant 20 N, no controller) | 3 |
 | `fig02_metrics.png` | The four performance measures marked on one response | 4 |
 | `fig03_p_sweep.png` | P only at several gains: always stops short of the target | 5 |
