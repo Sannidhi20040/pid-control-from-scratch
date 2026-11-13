@@ -23,6 +23,36 @@ they still meet every target with a 2 kg load, and when pushed past their limits
 (e.g. a 100 ms controller update) they degrade gently instead of oscillating.
 The full reasoning is in the report.
 
+## Approach
+
+1. Simulated the plant from its equation (semi-implicit Euler, 1 ms steps) and checked it against the force balance (20 N holds 1 m).
+2. Wrote the PID class from scratch and measured every result with the same four metrics (rise, overshoot, settling, steady-state error).
+3. Tested P, I and D one at a time and checked each against theory: P-only final position and overshoot match the formulas to within 0.1 %.
+4. Added the real-world problems one by one (30 N motor limit, ±1 mm sensor noise, sudden target jumps, slow controller updates), showed each failure, then fixed it.
+5. Chose final gains against explicit targets with every problem switched on, then stress-tested them (heavier mass, weaker motor, slower updates).
+6. Applied Ziegler–Nichols to a second system, 1/(s+1)³, and improved the result by hand.
+
+## What worked, what didn't, what next
+
+**What worked**
+- The simulation agrees with the theory: `checks.py` confirms 11 predictions automatically.
+- Each fix worked as predicted: anti-windup cut overshoot from 24 % to 0 %, the D filter cut force noise from 25.3 N to 1.0 N, and D on measurement cut the target-jump spike from 30 300 N to 300 N.
+- The final gains meet all targets and still do with a 2 kg load.
+
+**What didn't**
+- No gains can meet the targets when the physics forbids it: with a 5 kg mass, a 15 N motor, or a 2 m target, the motor simply lacks the force (force balance, not tuning).
+- The Ziegler–Nichols recipe alone gave 52 % overshoot; it needed three hand adjustments to reach 1 %.
+- The D filter is a trade-off: more smoothing means less noise but a slower reaction; I chose τ = 20 ms as the balance.
+- The model is idealised: linear spring, no friction, no motor dynamics, and uniform sensor noise. Real hardware would need retuning.
+
+**What I would explore next**
+- Disturbance rejection: push the block with 10 N mid-run and measure how quickly PID recovers.
+- Feedforward: send the known 20 N directly, so PID only corrects the remaining error.
+- Automatic gain search: optimise the gains against the targets instead of comparing candidates by hand.
+- Show how the system's poles move as the gains change, to explain stability visually.
+- An interactive slider tool to change gains and watch the response live.
+- Run the same controller on real hardware (e.g. a DC motor with an encoder on a microcontroller).
+
 ## Quick start
 
     git clone https://github.com/Sannidhi20040/pid-control-from-scratch.git
